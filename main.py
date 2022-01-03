@@ -34,7 +34,7 @@ def load_image(name, colorkey=-1):
     if not os.path.isfile(fullname):
         print(f"Файл с именем {fullname} не найден.")
         sys.exit()
-    return pygame.image.load(fullname).convert_alpha()
+    return pygame.image.load(fullname)
 
 
 def load_music(name):
@@ -109,8 +109,9 @@ class Board:
 
 
 class MainWindowOfGame(Board):
-    def __init__(self, screen, x=10, y=15):
+    def __init__(self, screen, game, x=10, y=15):
         super().__init__(x, y)
+        self.game = game
         self.set_view(0, 0, (W * 0.8) // y, (H * 0.8) // x, 1)
         self.screen = screen
 
@@ -129,12 +130,17 @@ class Hand:
 
 
 class LeftHand(Board, Hand):
-    def __init__(self, screen, x=1, y=1):
+    def __init__(self, screen, game, x=1, y=1):
         super().__init__(x, y)
         self.set_view(
-            0, H * 0.8, (W - 2 * (W // inventory.y)) // (inventory.y), H * 0.2, 1
+            0,
+            H * 0.8,
+            (W - 2 * (W // game.inventory.y)) // (game.inventory.y),
+            H * 0.2,
+            1,
         )
         self.screen = screen
+        self.game = game
         self.hand = ""
         self.empty = True
 
@@ -149,12 +155,13 @@ class LeftHand(Board, Hand):
 
 
 class RightHand(Board, Hand):
-    def __init__(self, screen, x=1, y=1):
+    def __init__(self, screen, game, x=1, y=1):
         super().__init__(x, y)
+        self.game = game
         self.set_view(
-            W - ((W - 2 * (W // inventory.y)) // (inventory.y)),
+            W - ((W - 2 * (W // self.game.inventory.y)) // (self.game.inventory.y)),
             H * 0.8,
-            (W - 2 * (W // inventory.y)) // (inventory.y),
+            (W - 2 * (W // self.game.inventory.y)) // (self.game.inventory.y),
             H * 0.2,
             1,
         )
@@ -173,8 +180,9 @@ class RightHand(Board, Hand):
 
 
 class InventoryElement(pygame.sprite.Sprite):
-    def __init__(self, name_of_image, x, y, w, h, name, *k):
+    def __init__(self, game, name_of_image, x, y, w, h, name, *k):
         super().__init__(k)
+        self.game = game
         self.image = pygame.transform.scale(load_image(name_of_image), (w, h))
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = x, y
@@ -196,27 +204,34 @@ class InventoryElement(pygame.sprite.Sprite):
                 self.f = True
         if event.type == pygame.MOUSEBUTTONUP:
             self.f = False
-            if left_hand.in_rect(self.rect[0], self.rect[1]):
-                if left_hand.empty:
-                    left_hand.empty = False
-                    left_hand.hand = self.name
-            elif right_hand.in_rect(self.rect[0], self.rect[1]):
-                if right_hand.empty:
-                    right_hand.empty = False
-                    right_hand.hand = self.name
+            if self.game.left_hand.in_rect(self.rect[0], self.rect[1]):
+                if self.game.left_hand.empty:
+                    self.game.left_hand.empty = False
+                    self.game.left_hand.hand = self.name
+            elif self.game.right_hand.in_rect(self.rect[0], self.rect[1]):
+                if self.game.right_hand.empty:
+                    self.game.right_hand.empty = False
+                    self.game.right_hand.hand = self.name
             else:
-                if right_hand.empty == False and right_hand.hand == self.name:
-                    right_hand.empty = True
-                    right_hand.hand = ""
-                if left_hand.empty == False and left_hand.hand == self.name:
-                    left_hand.empty = True
-                    left_hand.hand = ""
+                if (
+                    self.game.right_hand.empty == False
+                    and self.game.right_hand.hand == self.name
+                ):
+                    self.game.right_hand.empty = True
+                    self.game.right_hand.hand = ""
+                if (
+                    self.game.left_hand.empty == False
+                    and self.game.left_hand.hand == self.name
+                ):
+                    self.game.left_hand.empty = True
+                    self.game.left_hand.hand = ""
                 self.rect.x, self.rect.y = self.pos_0_x, self.pos_0_y
 
 
 class Inventory(Board):
-    def __init__(self, screen, x=2, y=5):
+    def __init__(self, screen, game, x=2, y=5):
         super().__init__(x, y)
+        self.game = game
         self.set_view(
             W // y, int(H * 0.8), (W - 2 * (W // y)) // (y), (H * 0.2) // x, 1
         )
@@ -225,12 +240,13 @@ class Inventory(Board):
 
     def render(self):
         super().render(self.screen)
-        inventory_group.draw(self.screen)
+        self.game.inventory_group.draw(self.screen)
 
     def add_element(self, name):
         if name not in self.inventory:
-            inventory_group.add(
+            self.game.inventory_group.add(
                 InventoryElement(
+                    self.game,
                     f"Inventory/{name}.png",
                     self.left
                     + int((len(self.inventory) % self.y) * self.cell_size_1)
@@ -245,14 +261,15 @@ class Inventory(Board):
 
     def remove_element(self, name):
         self.inventory = list(filter(lambda m: m != name, self.inventory))
-        for elem in inventory_group:
+        for elem in self.game.inventory_group:
             if elem.name == name:
                 elem.kill()
 
 
 class TextWindow(Board):
-    def __init__(self, screen, x=1, y=1):
+    def __init__(self, screen, game, x=1, y=1):
         super().__init__(x, y)
+        self.game = game
         self.set_view(int(W * 0.8), 0, (W * 0.2) // y, (H * 0.8) // x, 1)
         self.screen = screen
         self.text_screen = pygame.Surface(
@@ -275,7 +292,7 @@ class TextWindow(Board):
 
     def set_text(self, text, color=pygame.Color("brown")):
         self.text_screen.fill("black")
-        text_window.render()
+        self.game.text_window.render()
         font = pygame.font.SysFont(None, 25)
         words = [word.split(" ") for word in text.splitlines()]
         space = font.size(" ")[0]
@@ -301,25 +318,181 @@ class TextWindow(Board):
 
 
 pygame.init()
-screen = pygame.display.set_mode((W, H))
-main_window_of_game = MainWindowOfGame(screen)
-inventory = Inventory(screen)
-text_window = TextWindow(screen)
-inventory_group = pygame.sprite.Group()
-left_hand = LeftHand(screen)
-right_hand = RightHand(screen)
+
+
+class Plate(pygame.sprite.Sprite):
+    def __init__(self, game, type, x0, y0, *k):
+        super().__init__(k)
+        self.game = game
+        self.game = game
+        if type == "s":
+            self.image = pygame.transform.scale(
+                load_image("Teaching/stone_path.png"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+        elif type == "g":
+            self.image = pygame.transform.scale(
+                load_image("Teaching/grass.jpeg"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+        elif type == "t":
+            self.image = pygame.transform.scale(
+                load_image("Teaching/tree.jpg"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+            self.image.set_colorkey((255, 255, 255))
+        elif type == "b":
+            self.image = pygame.transform.scale(
+                load_image("Teaching/bush.jpg"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+            self.image.set_colorkey((255, 255, 255))
+        elif type == "2":
+            self.image = pygame.transform.scale(
+                load_image("Level_1/2.png"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+        elif type == "1":
+            self.image = pygame.transform.scale(
+                load_image("Level_1/1.png"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+        elif type == "3":
+            self.image = pygame.transform.scale(
+                load_image("Level_1/3.png"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+        elif type == "kust":
+            self.image = pygame.transform.scale(
+                load_image("Level_1/kust.png"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+        elif type == "dv":
+            self.image = pygame.transform.scale(
+                load_image("Level_1/dv_1.jpg"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+            self.image.set_colorkey((255, 255, 255))
+        elif type == "dv_2":
+            self.image = pygame.transform.scale(
+                load_image("Level_1/dv_2.jpg"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+            self.image.set_colorkey((255, 255, 255))
+        elif type == "glaz":
+            self.image = pygame.transform.scale(
+                load_image("Level_1/glaz.png"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+        elif type == "ab":
+            self.image = pygame.transform.scale(
+                load_image("Level_1/ab.png"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+        elif type == "chest":
+            self.image = pygame.transform.scale(
+                load_image("Level_1/chest_1.png"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+        elif type == "chest_1":
+            self.image = pygame.transform.scale(
+                load_image("Level_1/chest_2.png"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+        elif type == "kr":
+            self.image = pygame.transform.scale(
+                load_image("Level_1/kr.png"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+        elif type == "gr":
+            self.image = pygame.transform.scale(
+                load_image("Level_1/grib.png"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+        elif type == "k":
+            self.image = pygame.transform.scale(
+                load_image("Level_1/kam.png"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+        elif type == "c":
+            self.image = pygame.transform.scale(
+                load_image("Level_1/cv.png"),
+                (
+                    self.game.main_window_of_game.cell_size_1,
+                    self.game.main_window_of_game.cell_size_2,
+                ),
+            )
+        self.rect = self.image.get_rect()
+        self.rect.x = x0 * self.game.main_window_of_game.cell_size_1
+        self.rect.y = y0 * self.game.main_window_of_game.cell_size_2
+        self.mask = pygame.mask.from_surface(self.image)
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, x0=0, y0=0, name="hero.png", delta=[0, 0], *k):
+    def __init__(self, game, x0=0, y0=0, name="hero.png", delta=[0, 0], *k):
         super().__init__(k)
+        self.game = game
         self.image = pygame.transform.scale(
             load_image(name),
-            (main_window_of_game.cell_size_1, main_window_of_game.cell_size_2),
+            (
+                self.game.main_window_of_game.cell_size_1,
+                self.game.main_window_of_game.cell_size_2,
+            ),
         )
         self.rect = self.image.get_rect()
-        self.rect.x = x0 * main_window_of_game.cell_size_1
-        self.rect.y = y0 * main_window_of_game.cell_size_2
+        self.rect.x = x0 * self.game.main_window_of_game.cell_size_1
+        self.rect.y = y0 * self.game.main_window_of_game.cell_size_2
         self.mask = pygame.mask.from_surface(self.image)
         self.hp = 4
         if name == "hero.png":
@@ -332,18 +505,23 @@ class Player(pygame.sprite.Sprite):
         if self.name == "hero.png" and delta_pos != [0, 0]:
             self.delta_pos = delta_pos
         self.rect = self.rect.move(
-            main_window_of_game.cell_size_1 * delta_pos[0],
-            main_window_of_game.cell_size_2 * delta_pos[1],
+            self.game.main_window_of_game.cell_size_1 * delta_pos[0],
+            self.game.main_window_of_game.cell_size_2 * delta_pos[1],
         )
 
     def hp_render(self):
+        if self.hp == 0:
+            return
         image_hp = pygame.transform.scale(load_image(f"hp_{self.hp}.png"), (400, 50))
-        screen.blit(image_hp, (20, 10))
+        self.game.screen.blit(image_hp, (20, 10))
 
     def set_image(self, name_of_image):
         self.image = pygame.transform.scale(
             load_image(name_of_image),
-            (main_window_of_game.cell_size_1, main_window_of_game.cell_size_2),
+            (
+                self.game.main_window_of_game.cell_size_1,
+                self.game.main_window_of_game.cell_size_2,
+            ),
         )
 
     def died(self):
@@ -354,23 +532,35 @@ class Player(pygame.sprite.Sprite):
     def pos_on_board(self):
         pos = [0, 0]
         pos[0] = int(
-            (self.rect.x - main_window_of_game.left) // main_window_of_game.cell_size_1
+            (self.rect.x - self.game.main_window_of_game.left)
+            // self.game.main_window_of_game.cell_size_1
         )
         pos[1] = int(
-            (self.rect.y - main_window_of_game.top) // main_window_of_game.cell_size_2
+            (self.rect.y - self.game.main_window_of_game.top)
+            // self.game.main_window_of_game.cell_size_2
         )
         return pos
-
-
-player = Player()
-players_group = pygame.sprite.Group(player)
-plate_group = pygame.sprite.Group()
 
 
 class Game:
     def __init__(self):
         self.game_surface = pygame.Surface((W * 0.8, H * 0.8), pygame.SRCALPHA, 32)
 
+        self.screen = pygame.display.set_mode((W, H))
+        self.main_window_of_game = MainWindowOfGame(self.screen, self)
+        self.inventory = Inventory(self.screen, self)
+        self.text_window = TextWindow(self.screen, self)
+        self.inventory_group = pygame.sprite.Group()
+        self.left_hand = LeftHand(self.screen, self)
+        self.right_hand = RightHand(self.screen, self)
 
-Game()
+    def start_game(self):
+        pass
+
+
+game = Game()
+player = Player(game)
+players_group = pygame.sprite.Group(player)
+plate_group = pygame.sprite.Group()
+game.start_game()
 pygame.quit()
