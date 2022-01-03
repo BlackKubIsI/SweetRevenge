@@ -555,7 +555,64 @@ class Game:
         self.right_hand = RightHand(self.screen, self)
 
     def start_game(self):
-        pass
+        self.start()
+
+    def start(self):
+        running = True
+
+        fon_image = pygame.transform.scale(
+            load_image("Start/fon.jpeg"), (W * 0.8, H * 0.8)
+        )
+        self.game_surface.blit(fon_image, (0, 0))
+
+        font = pygame.font.Font(None, 100)
+        text = font.render("Start", True, [0, 0, 0])
+        self.game_surface.blit(
+            text, (W * 0.8 // 2 - W * 0.8 // 10, H * 0.8 // 2 - H * 0.8 // 20)
+        )
+
+        while running:
+            self.screen.fill((127, 72, 41))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if W * 0.8 >= event.pos[0] >= 0 and H * 0.8 >= event.pos[1] >= 0:
+                        running = False
+            self.main_window_of_game.render()
+            self.inventory.render()
+            self.text_window.render()
+            self.left_hand.render()
+            self.right_hand.render()
+            self.screen.blit(self.game_surface, (0, 0))
+            pygame.time.delay(100)
+            pygame.display.flip()
+
+    def game_over(self):
+        running = True
+        self.game_surface.fill("black")
+        fon_image = pygame.transform.scale(
+            load_image("GameOver/game_over.jpg"), (W * 0.8, H * 0.8)
+        )
+        self.game_surface.blit(fon_image, (0, 0))
+
+        while running:
+            self.screen.fill((127, 72, 41))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if W * 0.8 >= event.pos[0] >= 0 and H * 0.8 >= event.pos[1] >= 0:
+                        running = False
+            self.main_window_of_game.render()
+            self.inventory.render()
+            self.text_window.render()
+            self.left_hand.render()
+            self.right_hand.render()
+            self.screen.blit(self.game_surface, (0, 0))
+            pygame.time.delay(100)
+            pygame.display.flip()
+        self.start_game()
 
 
 game = Game()
