@@ -557,6 +557,7 @@ class Game:
     def start_game(self):
         self.start()
         self.introduction()
+        self.teaching()
 
     def start(self):
         running = True
@@ -683,6 +684,77 @@ class Game:
                 sys.exit()
         pygame.time.delay(5000)
 
+        pygame.mixer.music.stop()
+    
+    def teaching(self):
+        running = True
+        with open(os.path.join("", "teaching_1.txt")) as f:
+            board = list(map(lambda x: x.split("-"), f.read().split("\n")))
+        player_y = board.index(list(filter(lambda x: "@" in x, board))[0])
+        player_x = "".join(board[player_y]).index("@")
+        player = Player(self, player_x, player_y)
+        players_group = pygame.sprite.Group(player)
+        plate_group = pygame.sprite.Group()
+
+        for i in range(len(board)):
+            for g in range(len(board[0])):
+                plate_group.add(Plate(self, "g", g, i))
+        for i in range(len(board)):
+            for g in range(len(board[0])):
+                if board[i][g] in ["s", "@"]:
+                    plate_group.add(Plate(self, "s", g, i))
+                elif board[i][g] == "t":
+                    plate_group.add(Plate(self, "t", g, i))
+                elif board[i][g] == "b":
+                    plate_group.add(Plate(self, "b", g, i))
+        
+        load_music("Teaching/teaching.mp3")
+        pygame.mixer.music.play(-1, fade_ms=15000)
+
+        while running:
+            self.screen.fill((127, 72, 41))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.KEYDOWN:
+                    delta = [0, 0]
+                    pos_now_pl = [0, 0]
+                    pos_now_pl[0] = int((player.rect.x - self.main_window_of_game.left) // self.main_window_of_game.cell_size_1)
+                    pos_now_pl[1] = int((player.rect.y - self.main_window_of_game.top) // self.main_window_of_game.cell_size_2)
+                    if event.key == pygame.K_DOWN:
+                        if (H * 0.8 - self.main_window_of_game.cell_size_2) >= (player.rect.y + self.main_window_of_game.cell_size_2) >= 0:
+                            delta = [0, 1]
+                    if event.key == pygame.K_UP:
+                        if (H * 0.8 - self.main_window_of_game.cell_size_2) >= (player.rect.y - self.main_window_of_game.cell_size_2) >= 0:
+                            delta = [0, -1]
+                    if event.key == pygame.K_LEFT:
+                        if (W * 0.8 - self.main_window_of_game.cell_size_1) >= (player.rect.x - self.main_window_of_game.cell_size_1) >= 0:
+                            delta = [-1, 0]
+                    if event.key == pygame.K_RIGHT:
+                        if (W * 0.8 - self.main_window_of_game.cell_size_1) >= (player.rect.x + self.main_window_of_game.cell_size_1) >= 0:
+                            delta = [1, 0]
+                    if board[pos_now_pl[1] + delta[1]][pos_now_pl[0] + delta[0]] in ["s", "@"]:
+                        player.move(delta)
+                    if event.key == pygame.K_RETURN:
+                        for _1 in (-1, 0, 1):
+                            for _2 in (-1, 0, 1):
+                                if (pos_now_pl[1] + _2 < 0 or pos_now_pl[1] + _2 > len(board)) or\
+                                    (pos_now_pl[0] + _1 < 0 or pos_now_pl[0] + _1 > len(board[0])):
+                                    continue
+                                if board[pos_now_pl[1] + _2][pos_now_pl[0] + _1] == "t":
+                                    running = False
+            self.main_window_of_game.render()
+            self.inventory.render()
+            self.text_window.render()
+            self.left_hand.render()
+            self.right_hand.render()
+            plate_group.draw(self.screen)
+            players_group.draw(self.screen)
+            self.text_window.set_text("Дойдите до дерева используя клавиши: <<вверх>>,\
+             <<вниз>>, <<вправо>>, <<влево>>.")
+            pygame.time.delay(100)
+            pygame.display.flip()
+        
         pygame.mixer.music.stop()
 
 
