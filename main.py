@@ -558,6 +558,7 @@ class Game:
         self.start()
         self.introduction()
         self.teaching()
+        self.level_1()
 
     def start(self):
         running = True
@@ -591,6 +592,14 @@ class Game:
             pygame.display.flip()
 
     def game_over(self):
+        self.screen = pygame.display.set_mode((W, H))
+        self.main_window_of_game = MainWindowOfGame(self.screen, self)
+        self.inventory = Inventory(self.screen, self)
+        self.text_window = TextWindow(self.screen, self)
+        self.inventory_group = pygame.sprite.Group()
+        self.left_hand = LeftHand(self.screen, self)
+        self.right_hand = RightHand(self.screen, self)
+
         running = True
         self.game_surface.fill("black")
         fon_image = pygame.transform.scale(
@@ -615,24 +624,32 @@ class Game:
             pygame.time.delay(100)
             pygame.display.flip()
         self.start_game()
-    
-    def introduction(self): 
+
+    def introduction(self):
         running = True
 
-        zamok = pygame.transform.scale(load_image("Introduction/zamok.jpg"), (W * 0.8, H * 0.8))
-        king = pygame.transform.scale(load_image("Introduction/king.jpg"), (W * 0.8, H * 0.8))
-        poxod = pygame.transform.scale(load_image("Introduction/poxod.jpg"), (W * 0.8, H * 0.8))
-        voin = pygame.transform.scale(load_image("Introduction/voin.jpg"), (W * 0.8, H * 0.8))
+        zamok = pygame.transform.scale(
+            load_image("Introduction/zamok.jpg"), (W * 0.8, H * 0.8)
+        )
+        king = pygame.transform.scale(
+            load_image("Introduction/king.jpg"), (W * 0.8, H * 0.8)
+        )
+        poxod = pygame.transform.scale(
+            load_image("Introduction/poxod.jpg"), (W * 0.8, H * 0.8)
+        )
+        voin = pygame.transform.scale(
+            load_image("Introduction/voin.jpg"), (W * 0.8, H * 0.8)
+        )
 
         load_music("Introduction/war.mp3")
         pygame.mixer.music.play(-1, fade_ms=15000)
 
         self.game_surface.blit(zamok, (0, 0))
-        
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
-        
+
         self.main_window_of_game.render()
         self.inventory.render()
         self.text_window.render()
@@ -643,7 +660,14 @@ class Game:
             if event.type == pygame.QUIT:
                 sys.exit()
 
-        self.text_window.set_text("""Когда-то его называли Победоносным. Освободивший народ от тирании своего кровожадного дяди король Эрих стал надеждой Ланд Бесатт на светлое будущее.Однако шли годы, и вот уже тот, кто раньше вел народ за собой, стал новым проклятием для своей страны. И те, кто некогда звали Эриха Победоносным, нарекли его Жадным королем.""")
+        self.text_window.set_text(
+            """Когда-то его называли Победоносным. Освободивший народ от тирании\
+своего кровожадного дяди король Эрих стал надеждой Ланд Бесатт \
+на светлое будущее.Однако шли годы, и вот уже тот, кто раньше \
+вел народ за собой, стал новым проклятием для своей страны.\
+И те, кто некогда звали Эриха Победоносным, нарекли его\
+Жадным королем."""
+        )
         self.screen.blit(self.game_surface, (0, 0))
         pygame.display.flip()
         pygame.time.delay(5000)
@@ -653,28 +677,50 @@ class Game:
                 sys.exit()
         pygame.time.delay(5000)
 
-        self.text_window.set_text("""Новый правитель моментально развязал очередную войну с варграми – кочевниками, обитающими в степях к югу от Ланд Бесатт. И грозился начать противостояние и с Ланд Меннескер – королевством людей, самым большим на всем континенте.""")
+        self.text_window.set_text(
+            """Новый правитель моментально развязал очередную войну с варграми\
+– кочевниками, обитающими в степях к югу от Ланд Бесатт. И грозился \
+начать противостояние и с Ланд Меннескер – королевством людей, \
+самым большим на всем континенте."""
+        )
         self.screen.blit(king, (0, 0))
         pygame.display.flip()
         pygame.time.delay(5000)
-        self.text_window.set_text("""Его боялись и поначалу даже уважали, пока не осознали, что король Арнгейр Кровавый безумен. Он убирал со своего пути всех, кого мог заподозрить в неверности, а после взялся и за тех, кто ему просто не нравился. Вскоре дело дошло до одной причины: желания развлечь себя очередной кровавой жертвой.""")
+        self.text_window.set_text(
+            """Его боялись и поначалу даже уважали, пока не осознали,\
+что король Арнгейр Кровавый безумен. Он убирал со своего пути всех, \
+кого мог заподозрить в неверности, а после взялся и \
+за тех, кто ему просто не нравился. Вскоре дело дошло \
+до одной причины: желания развлечь себя \
+очередной кровавой жертвой."""
+        )
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
         pygame.time.delay(5000)
 
-        self.text_window.set_text("""Но вот, появился за горами, в далекой стране, вдруг доблестный и смелый рыцарь. Был он очень сильным и отважным. С малых лет упражнялся он в воинской отваге и был во множестве сражений. Никто не мог победить его в открытом бою.""")
+        self.text_window.set_text(
+            """Но вот, появился за горами, в далекой стране, вдруг доблестный и \
+смелый рыцарь. Был он очень сильным и отважным. С малых лет \
+упражнялся он в воинской отваге и был во множестве сражений. \
+Никто не мог победить его в открытом бою."""
+        )
         self.screen.blit(poxod, (0, 0))
         pygame.display.flip()
         pygame.time.delay(5000)
-        
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
         pygame.time.delay(5000)
 
-        self.text_window.set_text("""Узнал рыцарь о том, что злой король угнетает свой народ, оседлал своего верного коня, позвал оруженосца, взял длинное копье и дедовский меч и отправился в дальнюю дорогу, в тридевятое государство, в тридесятое царство.""")
+        self.text_window.set_text(
+            """Узнал рыцарь о том, что злой король угнетает свой народ, оседлал своего \
+верного коня, позвал оруженосца, взял длинное копье и дедовский меч \
+и отправился в дальнюю дорогу, в тридевятое государство, \
+в тридесятое царство."""
+        )
         self.screen.blit(voin, (0, 0))
         pygame.display.flip()
         pygame.time.delay(5000)
@@ -685,7 +731,7 @@ class Game:
         pygame.time.delay(5000)
 
         pygame.mixer.music.stop()
-    
+
     def teaching(self):
         running = True
         with open(os.path.join("", "teaching_1.txt")) as f:
@@ -707,7 +753,7 @@ class Game:
                     plate_group.add(Plate(self, "t", g, i))
                 elif board[i][g] == "b":
                     plate_group.add(Plate(self, "b", g, i))
-        
+
         load_music("Teaching/teaching.mp3")
         pygame.mixer.music.play(-1, fade_ms=15000)
 
@@ -719,27 +765,57 @@ class Game:
                 if event.type == pygame.KEYDOWN:
                     delta = [0, 0]
                     pos_now_pl = [0, 0]
-                    pos_now_pl[0] = int((player.rect.x - self.main_window_of_game.left) // self.main_window_of_game.cell_size_1)
-                    pos_now_pl[1] = int((player.rect.y - self.main_window_of_game.top) // self.main_window_of_game.cell_size_2)
+                    pos_now_pl[0] = int(
+                        (player.rect.x - self.main_window_of_game.left)
+                        // self.main_window_of_game.cell_size_1
+                    )
+                    pos_now_pl[1] = int(
+                        (player.rect.y - self.main_window_of_game.top)
+                        // self.main_window_of_game.cell_size_2
+                    )
                     if event.key == pygame.K_DOWN:
-                        if (H * 0.8 - self.main_window_of_game.cell_size_2) >= (player.rect.y + self.main_window_of_game.cell_size_2) >= 0:
+                        if (
+                            (H * 0.8 - self.main_window_of_game.cell_size_2)
+                            >= (player.rect.y + self.main_window_of_game.cell_size_2)
+                            >= 0
+                        ):
                             delta = [0, 1]
                     if event.key == pygame.K_UP:
-                        if (H * 0.8 - self.main_window_of_game.cell_size_2) >= (player.rect.y - self.main_window_of_game.cell_size_2) >= 0:
+                        if (
+                            (H * 0.8 - self.main_window_of_game.cell_size_2)
+                            >= (player.rect.y - self.main_window_of_game.cell_size_2)
+                            >= 0
+                        ):
                             delta = [0, -1]
                     if event.key == pygame.K_LEFT:
-                        if (W * 0.8 - self.main_window_of_game.cell_size_1) >= (player.rect.x - self.main_window_of_game.cell_size_1) >= 0:
+                        if (
+                            (W * 0.8 - self.main_window_of_game.cell_size_1)
+                            >= (player.rect.x - self.main_window_of_game.cell_size_1)
+                            >= 0
+                        ):
                             delta = [-1, 0]
                     if event.key == pygame.K_RIGHT:
-                        if (W * 0.8 - self.main_window_of_game.cell_size_1) >= (player.rect.x + self.main_window_of_game.cell_size_1) >= 0:
+                        if (
+                            (W * 0.8 - self.main_window_of_game.cell_size_1)
+                            >= (player.rect.x + self.main_window_of_game.cell_size_1)
+                            >= 0
+                        ):
                             delta = [1, 0]
-                    if board[pos_now_pl[1] + delta[1]][pos_now_pl[0] + delta[0]] in ["s", "@"]:
+                    if board[pos_now_pl[1] + delta[1]][pos_now_pl[0] + delta[0]] in [
+                        "s",
+                        "@",
+                    ]:
                         player.move(delta)
                     if event.key == pygame.K_RETURN:
                         for _1 in (-1, 0, 1):
                             for _2 in (-1, 0, 1):
-                                if (pos_now_pl[1] + _2 < 0 or pos_now_pl[1] + _2 > len(board)) or\
-                                    (pos_now_pl[0] + _1 < 0 or pos_now_pl[0] + _1 > len(board[0])):
+                                if (
+                                    pos_now_pl[1] + _2 < 0
+                                    or pos_now_pl[1] + _2 > len(board)
+                                ) or (
+                                    pos_now_pl[0] + _1 < 0
+                                    or pos_now_pl[0] + _1 > len(board[0])
+                                ):
                                     continue
                                 if board[pos_now_pl[1] + _2][pos_now_pl[0] + _1] == "t":
                                     running = False
@@ -750,11 +826,304 @@ class Game:
             self.right_hand.render()
             plate_group.draw(self.screen)
             players_group.draw(self.screen)
-            self.text_window.set_text("Дойдите до дерева используя клавиши: <<вверх>>,\
-             <<вниз>>, <<вправо>>, <<влево>>.")
+            self.text_window.set_text(
+                "Дойдите до дерева используя клавиши: <<вверх>>,\
+             <<вниз>>, <<вправо>>, <<влево>>."
+            )
             pygame.time.delay(100)
             pygame.display.flip()
-        
+
+        pygame.mixer.music.stop()
+
+    def level_1(self):
+        def near_plates(pos_now_pl):
+            k = []
+            for i in (-1, 0, 1):
+                for g in (-1, 0, 1):
+                    if (i == 0 or g == 0) and (g != 0 or i != 0):
+                        k.append(board[pos_now_pl[1] + i][pos_now_pl[0] + g])
+            return k
+
+        def near_mobs(pos_now_pl, group):
+            k = []
+            for i in (-1, 0, 1):
+                for g in (-1, 0, 1):
+                    if i != 0 or g != 0:
+                        for mob in group:
+                            pos_now_mob = mob.pos_on_board()
+                            if (
+                                pos_now_mob[0] == pos_now_pl[0] + i
+                                and pos_now_mob[1] == pos_now_pl[1] + g
+                            ):
+                                k.append(mob)
+            return k
+
+        running = True
+        with open(os.path.join("", "level_1.txt")) as f:
+            board = list(map(lambda x: x.split(), f.read().split("\n")))
+        player_y = board.index(list(filter(lambda x: "@" in x, board))[0])
+        player_x = "".join(board[player_y]).index("@")
+        player = Player(self, player_x, player_y)
+        players_group = pygame.sprite.Group()
+        players_group.add(player)
+        balls_group = pygame.sprite.Group()
+        plate_group = pygame.sprite.Group()
+        kam_group = pygame.sprite.Group()
+        screen_level_1 = pygame.Surface(
+            (
+                int(len(board[0]) * self.main_window_of_game.cell_size_1),
+                int(len(board) * self.main_window_of_game.cell_size_2),
+            )
+        )
+        delta_kam = 1
+
+        def update_board():
+            for i in range(len(board)):
+                for g in range(len(board[0])):
+                    if board[i][g] in ["1", "@"]:
+                        plate_group.add(Plate(self, "1", g, i))
+                    elif board[i][g] == "2":
+                        plate_group.add(Plate(self, "2", g, i))
+                    elif board[i][g] == "3":
+                        plate_group.add(Plate(self, "3", g, i))
+                    elif board[i][g] == "ab":
+                        plate_group.add(Plate(self, "1", g, i))
+                        plate_group.add(Plate(self, "ab", g, i))
+                    elif board[i][g] == "kust":
+                        plate_group.add(Plate(self, "1", g, i))
+                        plate_group.add(Plate(self, "kust", g, i))
+                    elif board[i][g] == "glaz":
+                        plate_group.add(Plate(self, "kust", g, i))
+                        plate_group.add(Plate(self, "glaz", g, i))
+                    elif board[i][g] == "dv":
+                        plate_group.add(Plate(self, "1", g, i))
+                        plate_group.add(Plate(self, "dv", g, i))
+                    elif board[i][g] == "dv_2":
+                        plate_group.add(Plate(self, "1", g, i))
+                        plate_group.add(Plate(self, "dv_2", g, i))
+                    elif board[i][g] == "chest":
+                        plate_group.add(Plate(self, "1", g, i))
+                        plate_group.add(Plate(self, "chest", g, i))
+                    elif board[i][g] == "chest_1":
+                        plate_group.add(Plate(self, "1", g, i))
+                        plate_group.add(Plate(self, "chest_1", g, i))
+                    elif board[i][g] == "k":
+                        plate_group.add(Plate(self, "1", g, i))
+                        kam_group.add(Player(self, g, i, "Level_1/kam.png"))
+                    elif board[i][g] == "gr":
+                        plate_group.add(Plate(self, "1", g, i))
+                        players_group.add(Player(self, g, i, "Level_1/grib.png"))
+                    elif board[i][g] == "kr":
+                        plate_group.add(Plate(self, "1", g, i))
+                        plate_group.add(Plate(self, "kr", g, i))
+                    elif board[i][g] == "c":
+                        plate_group.add(Plate(self, "1", g, i))
+                        plate_group.add(Plate(self, "c", g, i))
+
+        update_board()
+
+        load_music("Teaching/teaching.mp3")
+        pygame.mixer.music.play(-1, fade_ms=15000)
+        text = ""
+
+        while running:
+            clock.tick(70)
+            self.screen.fill((127, 72, 41))
+            screen_level_1.fill("black")
+            self.text_window.render()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.KEYDOWN:
+                    delta = [0, 0]
+                    pos_now_pl = [0, 0]
+                    pos_now_pl[0] = int(
+                        (player.rect.x - self.main_window_of_game.left)
+                        // self.main_window_of_game.cell_size_1
+                    )
+                    pos_now_pl[1] = int(
+                        (player.rect.y - self.main_window_of_game.top)
+                        // self.main_window_of_game.cell_size_2
+                    )
+                    if event.key == pygame.K_DOWN:
+                        delta = [0, 1]
+                    if event.key == pygame.K_UP:
+                        delta = [0, -1]
+                    if event.key == pygame.K_LEFT:
+                        delta = [-1, 0]
+                    if event.key == pygame.K_RIGHT:
+                        delta = [1, 0]
+                    if board[pos_now_pl[1] + delta[1]][pos_now_pl[0] + delta[0]] in [
+                        "1",
+                        "@",
+                        "3",
+                        "dv_2",
+                    ]:
+                        player.move(delta)
+                    if event.key == pygame.K_RETURN:
+                        if "chest" in near_plates(pos_now_pl):
+                            self.inventory.add_element("stick")
+                            board[19][39] = "chest_1"
+                            kam_group = pygame.sprite.Group()
+                            update_board()
+                            text = "Вы открыли сундук!! Теперь у вас есть палка! Для того, чтобы воспользоваться палкой, перетащите её мышкой в одну из рук. Теперь нажмите enter!"
+                        if "dv" in near_plates(pos_now_pl) and (
+                            self.left_hand.hand == "key"
+                            or self.right_hand.hand == "key"
+                            or self.left_hand.hand == "key_1"
+                            or self.right_hand.hand == "key_1"
+                        ):
+                            self.inventory.add_element("stick")
+                            board[player.pos_on_board()[1] - 1][
+                                player.pos_on_board()[0]
+                            ] = "dv_2"
+                            kam_group = pygame.sprite.Group()
+                            if "key" in self.inventory.inventory:
+                                self.inventory.remove_element("key")
+                                self.left_hand.empty, self.right_hand.empty = True, True
+                                self.left_hand.hand, self.right_hand.hand = "", ""
+                            update_board()
+                        if "kr" in near_plates(pos_now_pl):
+                            text = "Привет!Меня зовут Крот. Я и мои друзья живём в этом подземелье уже очень давно, но недавно здесь поселились эти противные камни! Они заточили моих друзей в комнате неподалёку оттуда. Я дам тебе этот бластер. С помощью него ты сможень одолеть эти камни и спасти моих друзей. Ах, да! Я чуть не забыл! Держи. Это ключ от комнаты."
+                            self.inventory.add_element("gun")
+                            self.inventory.add_element("key")
+                        if "ab" in near_plates(pos_now_pl):
+                            text = "Привет! Меня зовут Сосиска! Я ждал тебя. Держи. Этот ключ поможет тебе открыть следующую дверь."
+                            self.inventory.add_element("key_1")
+                        if "glaz" in near_plates(pos_now_pl):
+                            text = "Вот ты и прошёл первое испытание... Впереди тебя ожидает ещё много трудностей. Следующая - тёмный лес, полный опасностей."
+                        if "kust" in near_plates(pos_now_pl):
+                            running = False
+                        if not (self.right_hand.empty and self.left_hand.empty):
+                            if not (self.right_hand.empty):
+                                if self.right_hand.hand in ["stick", "sword"]:
+                                    hit_of_stick.play()
+                                    for mob in near_mobs(pos_now_pl, players_group):
+                                        if mob.hp == 1:
+                                            board[mob.pos_on_board()[0]][
+                                                mob.pos_on_board()[1]
+                                            ] = "1"
+                                        mob.hp -= 1
+                                if self.right_hand.hand in ["gun"]:
+                                    balls_group.add(
+                                        Player(
+                                            self,
+                                            mob.pos_on_board()[0] + player.delta_pos[0],
+                                            mob.pos_on_board()[1] + player.delta_pos[1],
+                                            name="Inventory/ball.png",
+                                            delta=player.delta_pos,
+                                        )
+                                    )
+
+                            if not (self.left_hand.empty):
+                                if self.left_hand.hand in ["stick", "sword"]:
+                                    hit_of_stick.play()
+                                    for mob in near_mobs(pos_now_pl, players_group):
+                                        if mob.hp == 1:
+                                            board[mob.pos_on_board()[1]][
+                                                mob.pos_on_board()[0]
+                                            ] = "1"
+                                        mob.hp -= 1
+                                if self.left_hand.hand in ["gun"]:
+                                    blaster_shot.play()
+                                    balls_group.add(
+                                        Player(
+                                            self,
+                                            player.pos_on_board()[0]
+                                            + player.delta_pos[0],
+                                            player.pos_on_board()[1]
+                                            + player.delta_pos[1],
+                                            name="Inventory/ball.png",
+                                            delta=player.delta_pos,
+                                        )
+                                    )
+                self.inventory_group.update(event)
+            if len(near_mobs(player.pos_on_board(), kam_group)) != 0:
+                player.hp -= 1
+                damage.play()
+            for m in balls_group:
+                m.move(m.delta_pos)
+                for mob in players_group:
+                    if mob.pos_on_board() == m.pos_on_board():
+                        if mob.hp <= 1:
+                            board[mob.pos_on_board()[1]][mob.pos_on_board()[0]] = "1"
+                        mob.hp -= 1
+                        m.kill()
+                for mob in kam_group:
+                    if mob.pos_on_board() == m.pos_on_board():
+                        if mob.hp <= 1:
+                            board[mob.pos_on_board()[1]][mob.pos_on_board()[0]] = "1"
+                        mob.hp -= 1
+                        m.kill()
+                if board[m.pos_on_board()[1]][m.pos_on_board()[0]] not in [
+                    "1",
+                    "@",
+                    "gr",
+                    "dv_2",
+                ]:
+                    m.kill()
+            for m in kam_group:
+                if board[m.pos_on_board()[1]][m.pos_on_board()[0] + delta_kam] not in [
+                    "1",
+                    "@",
+                    "k",
+                ]:
+                    delta_kam = -delta_kam
+            for m in kam_group:
+                m.move([delta_kam, 0])
+            for pl in players_group:
+                pl.died()
+            for pl in kam_group:
+                if pl.died()[1]:
+                    board[pl.y0][pl.x0] = "1"
+            if (
+                self.right_hand.empty == False
+                and self.right_hand.hand != "key"
+                and self.right_hand.hand != "key_1"
+            ):
+                player.set_image(f"mario_and_{self.right_hand.hand}.png")
+            if (
+                self.left_hand.empty == False
+                and self.left_hand.hand != "key"
+                and self.left_hand.hand != "key_1"
+            ):
+                player.set_image(f"mario_and_{self.left_hand.hand}.png")
+            if self.left_hand.hand == "" and self.right_hand.hand == "":
+                player.set_image(f"hero.png")
+            if player.hp == 0:
+                pygame.mixer.music.stop()
+                self.game_over()
+                break
+            self.main_window_of_game.render()
+            self.text_window.render()
+            self.inventory.render()
+            self.left_hand.render()
+            self.right_hand.render()
+            self.text_window.set_text(text)
+            plate_group.draw(screen_level_1)
+            players_group.draw(screen_level_1)
+            balls_group.draw(screen_level_1)
+            kam_group.draw(screen_level_1)
+            self.screen.blit(
+                screen_level_1,
+                (0, 0),
+                area=(
+                    (player.rect.x - self.main_window_of_game.cell_size_1 * 5),
+                    (player.rect.y - self.main_window_of_game.cell_size_2 * 5),
+                    (player.rect.x - self.main_window_of_game.cell_size_1 * 5)
+                    + W * 0.8
+                    - self.main_window_of_game.cell_size_1
+                    * (int(player.rect.x // self.main_window_of_game.cell_size_1) - 5),
+                    (player.rect.y - self.main_window_of_game.cell_size_2 * 5)
+                    + H * 0.8
+                    - self.main_window_of_game.cell_size_2
+                    * (int(player.rect.y // self.main_window_of_game.cell_size_2) - 5),
+                ),
+            )
+            player.hp_render()
+            pygame.time.delay(100)
+            pygame.display.flip()
+
         pygame.mixer.music.stop()
 
 
