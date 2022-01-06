@@ -556,6 +556,7 @@ class Game:
 
     def start_game(self):
         self.start()
+        self.introduction()
 
     def start(self):
         running = True
@@ -613,6 +614,76 @@ class Game:
             pygame.time.delay(100)
             pygame.display.flip()
         self.start_game()
+    
+    def introduction(self): 
+        running = True
+
+        zamok = pygame.transform.scale(load_image("Introduction/zamok.jpg"), (W * 0.8, H * 0.8))
+        king = pygame.transform.scale(load_image("Introduction/king.jpg"), (W * 0.8, H * 0.8))
+        poxod = pygame.transform.scale(load_image("Introduction/poxod.jpg"), (W * 0.8, H * 0.8))
+        voin = pygame.transform.scale(load_image("Introduction/voin.jpg"), (W * 0.8, H * 0.8))
+
+        load_music("Introduction/war.mp3")
+        pygame.mixer.music.play(-1, fade_ms=15000)
+
+        self.game_surface.blit(zamok, (0, 0))
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+        
+        self.main_window_of_game.render()
+        self.inventory.render()
+        self.text_window.render()
+        self.left_hand.render()
+        self.right_hand.render()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+
+        self.text_window.set_text("""Когда-то его называли Победоносным. Освободивший народ от тирании своего кровожадного дяди король Эрих стал надеждой Ланд Бесатт на светлое будущее.Однако шли годы, и вот уже тот, кто раньше вел народ за собой, стал новым проклятием для своей страны. И те, кто некогда звали Эриха Победоносным, нарекли его Жадным королем.""")
+        self.screen.blit(self.game_surface, (0, 0))
+        pygame.display.flip()
+        pygame.time.delay(5000)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+        pygame.time.delay(5000)
+
+        self.text_window.set_text("""Новый правитель моментально развязал очередную войну с варграми – кочевниками, обитающими в степях к югу от Ланд Бесатт. И грозился начать противостояние и с Ланд Меннескер – королевством людей, самым большим на всем континенте.""")
+        self.screen.blit(king, (0, 0))
+        pygame.display.flip()
+        pygame.time.delay(5000)
+        self.text_window.set_text("""Его боялись и поначалу даже уважали, пока не осознали, что король Арнгейр Кровавый безумен. Он убирал со своего пути всех, кого мог заподозрить в неверности, а после взялся и за тех, кто ему просто не нравился. Вскоре дело дошло до одной причины: желания развлечь себя очередной кровавой жертвой.""")
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+        pygame.time.delay(5000)
+
+        self.text_window.set_text("""Но вот, появился за горами, в далекой стране, вдруг доблестный и смелый рыцарь. Был он очень сильным и отважным. С малых лет упражнялся он в воинской отваге и был во множестве сражений. Никто не мог победить его в открытом бою.""")
+        self.screen.blit(poxod, (0, 0))
+        pygame.display.flip()
+        pygame.time.delay(5000)
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+        pygame.time.delay(5000)
+
+        self.text_window.set_text("""Узнал рыцарь о том, что злой король угнетает свой народ, оседлал своего верного коня, позвал оруженосца, взял длинное копье и дедовский меч и отправился в дальнюю дорогу, в тридевятое государство, в тридесятое царство.""")
+        self.screen.blit(voin, (0, 0))
+        pygame.display.flip()
+        pygame.time.delay(5000)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+        pygame.time.delay(5000)
+
+        pygame.mixer.music.stop()
 
 
 game = Game()
