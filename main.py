@@ -1,4 +1,7 @@
-import pygame, sys, os, copy
+import pygame
+import sys
+import os
+import copy
 
 
 pygame.init()
@@ -26,7 +29,8 @@ hit_of_stick = pygame.mixer.Sound(
 blaster_shot = pygame.mixer.Sound(
     os.path.join("data/music/SoundEffects", "blaster_shot.ogg")
 )
-damage = pygame.mixer.Sound(os.path.join("data/music/SoundEffects", "damage.ogg"))
+damage = pygame.mixer.Sound(os.path.join(
+    "data/music/SoundEffects", "damage.ogg"))
 
 
 def load_image(name, colorkey=-1):
@@ -34,7 +38,10 @@ def load_image(name, colorkey=-1):
     if not os.path.isfile(fullname):
         print(f"Файл с именем {fullname} не найден.")
         sys.exit()
-    return pygame.image.load(fullname)
+    if game.status == "level_3":
+        return pygame.image.load(fullname).convert()
+    else:
+        return pygame.image.load(fullname)
 
 
 def load_music(name):
@@ -83,12 +90,15 @@ class Board:
 
     def get_cell(self, mouse_pos):
         if (
-            self.left + self.x * (self.cell_size_1) >= mouse_pos[0] >= self.left
+            self.left + self.x *
+                (self.cell_size_1) >= mouse_pos[0] >= self.left
             and self.top + self.y * (self.cell_size_2) >= mouse_pos[1] >= self.top
         ):
             return (
-                (mouse_pos[0] - self.left) // (self.cell_size_1 + self.line_size) + 1,
-                (mouse_pos[1] - self.top) // (self.cell_size_2 + self.line_size) + 1,
+                (mouse_pos[0] - self.left) // (self.cell_size_1 +
+                                               self.line_size) + 1,
+                (mouse_pos[1] - self.top) // (self.cell_size_2 +
+                                              self.line_size) + 1,
             )
 
     def on_click(self, cell_coords):
@@ -146,10 +156,11 @@ class LeftHand(Board, Hand):
 
     def render(self):
         super().render(self.screen)
+        image = load_image("hand_1.png")
+        image.set_colorkey((255, 255, 255))
         self.screen.blit(
             pygame.transform.scale(
-                load_image("hand_1.png"), (self.cell_size_1, self.cell_size_2)
-            ),
+                image, (self.cell_size_1, self.cell_size_2)),
             (self.left, self.top),
         )
 
@@ -159,7 +170,8 @@ class RightHand(Board, Hand):
         super().__init__(x, y)
         self.game = game
         self.set_view(
-            W - ((W - 2 * (W // self.game.inventory.y)) // (self.game.inventory.y)),
+            W - ((W - 2 * (W // self.game.inventory.y)) //
+                 (self.game.inventory.y)),
             H * 0.8,
             (W - 2 * (W // self.game.inventory.y)) // (self.game.inventory.y),
             H * 0.2,
@@ -171,10 +183,11 @@ class RightHand(Board, Hand):
 
     def render(self):
         super().render(self.screen)
+        image = load_image("hand_2.png")
+        image.set_colorkey((255, 255, 255))
         self.screen.blit(
             pygame.transform.scale(
-                load_image("hand_2.png"), (self.cell_size_1, self.cell_size_2)
-            ),
+                image, (self.cell_size_1, self.cell_size_2)),
             (self.left, self.top),
         )
 
@@ -251,7 +264,8 @@ class Inventory(Board):
                     self.left
                     + int((len(self.inventory) % self.y) * self.cell_size_1)
                     + self.cell_size_1 // 3,
-                    self.top + int((len(self.inventory) // self.y) * self.cell_size_2),
+                    self.top + int((len(self.inventory) // self.y)
+                                   * self.cell_size_2),
                     self.cell_size_1 // 3,
                     self.cell_size_2,
                     name,
@@ -264,6 +278,11 @@ class Inventory(Board):
         for elem in self.game.inventory_group:
             if elem.name == name:
                 elem.kill()
+    
+    def remove_all(self):
+        self.inventory = []
+        for elem in self.game.inventory_group:
+            elem.kill()
 
 
 class TextWindow(Board):
@@ -282,11 +301,13 @@ class TextWindow(Board):
     def render(self):
         super().render(self.screen)
         self.text_screen.blit(
-            pygame.transform.scale(load_image("parchment.png"), (W * 0.2, H * 0.8)),
+            pygame.transform.scale(load_image(
+                "parchment.png"), (W * 0.2, H * 0.8)),
             (0, 0),
         )
         self.screen.blit(
-            pygame.transform.scale(load_image("parchment.png"), (W * 0.2, H * 0.8)),
+            pygame.transform.scale(load_image(
+                "parchment.png"), (W * 0.2, H * 0.8)),
             (self.left, self.top),
         )
 
@@ -512,7 +533,8 @@ class Player(pygame.sprite.Sprite):
     def hp_render(self):
         if self.hp == 0:
             return
-        image_hp = pygame.transform.scale(load_image(f"hp_{self.hp}.png"), (400, 50))
+        image_hp = pygame.transform.scale(
+            load_image(f"hp_{self.hp}.png"), (400, 50))
         self.game.screen.blit(image_hp, (20, 10))
 
     def set_image(self, name_of_image):
@@ -542,10 +564,248 @@ class Player(pygame.sprite.Sprite):
         return pos
 
 
+class RectForСollisionСhecks(pygame.sprite.Sprite):
+    def __init__(self, pos_1, pos_2, *k):
+        super().__init__(k)
+        self.image = pygame.Surface((abs(pos_2[0]), abs(pos_2[1])))
+        self.image.fill("green")
+        self.rect = self.image.get_rect()
+        self.rect.x = pos_1[0]
+        self.rect.y = pos_1[1]
+        self.mask = pygame.mask.from_surface(self.image)
+
+
+class PlayerForPlatform(pygame.sprite.Sprite):
+    def __init__(self, game, screen, x0=0, y0=0, *k):
+        super().__init__(k)
+        self.screen = screen
+        self.image = pygame.transform.scale(load_image("hero.png"), (20, 40))
+        self.image.set_colorkey((0, 0, 0))
+        self.rect = self.image.get_rect()
+        self.rect.x = x0
+        self.rect.y = y0
+        self.game = game
+        self.run = 0
+        self.v = 0
+        self.hp = 8
+        self.in_water = False
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def update(
+        self, delta, l=None, t=None, wall=None, j=None, barrier=None, water=None
+    ):
+        if wall is not None:
+            rect_for_collision_checks = RectForСollisionСhecks(
+                [self.rect.x, self.rect.y + delta[1] * 10], [self.rect[2], self.rect[3] + delta[1] * 10])
+            if (not pygame.sprite.collide_mask(rect_for_collision_checks, wall) and not pygame.sprite.collide_mask(rect_for_collision_checks, t)) or pygame.sprite.collide_mask(self, l):
+                self.rect.y += delta[1] * 10
+            rect_for_collision_checks = RectForСollisionСhecks(
+                [self.rect.x + delta[0] * 10, self.rect.y], [self.rect[2] + delta[0] * 10, self.rect[3]])
+            if not pygame.sprite.collide_mask(rect_for_collision_checks, wall) and not pygame.sprite.collide_mask(rect_for_collision_checks, t):
+                self.rect.x += delta[0] * 10
+            else:
+                if pygame.sprite.collide_mask(rect_for_collision_checks, wall) is not None:
+                    mask = pygame.sprite.collide_mask(
+                        rect_for_collision_checks, wall)
+                    if delta[0] * 10 <= 0:
+                        mask = pygame.sprite.collide_mask(
+                            wall, rect_for_collision_checks)
+                        self.rect.x -= (abs(abs(mask[0] -
+                                        self.rect.x) - abs(delta[0] * 10)))
+                    elif delta[0] * 10 > 0:
+                        self.rect.x += abs(abs(delta[0] * 10) - mask[0])
+                if pygame.sprite.collide_mask(rect_for_collision_checks, t) is not None:
+                    mask = pygame.sprite.collide_mask(
+                        rect_for_collision_checks, t)
+                    if delta[0] * 10 <= 0:
+                        mask = pygame.sprite.collide_mask(
+                            t, rect_for_collision_checks)
+                        self.rect.x -= (abs(abs(mask[0] -
+                                        self.rect.x) - abs(delta[0] * 10)))
+                    elif delta[0] * 10 > 0:
+                        self.rect.x += abs(abs(delta[0] * 10) - mask[0])
+
+            # image update
+            if delta[0] != 0:
+                self.run = (self.run + 1) % 3 + 1
+                if delta[0] == 1:
+                    self.set_image(f"Level_3/mario_run_{self.run}.png")
+                elif delta[0] == -1:
+                    self.set_image(
+                        f"Level_3/mario_run_{self.run}.png", reverse=True)
+            else:
+                self.run = 0
+                self.set_image(f"hero_1.png")
+            # image update quit
+
+            if delta[1] == 0:
+                if t is not None:
+                    if pygame.sprite.collide_mask(self, j):
+                        self.rect.y -= 2
+                        self.v -= 20
+                    if pygame.sprite.collide_mask(self, water):
+                        self.in_water = True
+                    else:
+                        self.in_water = False
+                    if pygame.sprite.collide_mask(self, barrier):
+                        self.hp -= 1
+                        damage.play()
+                    elif not pygame.sprite.collide_mask(self, t) and not (
+                        pygame.sprite.collide_mask(self, wall)
+                    ):
+                        rect_for_collision_checks = RectForСollisionСhecks(
+                            [self.rect.x, self.rect.y + 1], [self.rect[2], self.rect[3] + 1])
+                        if pygame.sprite.collide_mask(
+                            rect_for_collision_checks, t
+                        ) or pygame.sprite.collide_mask(rect_for_collision_checks, wall):
+                            self.v = 0
+                        elif not self.in_water:
+                            self.v += 1
+                    rect_for_collision_checks = RectForСollisionСhecks(
+                        [self.rect.x, self.rect.y + self.v], [self.rect[2], self.rect[3] + self.v])
+                    if pygame.sprite.collide_mask(
+                        rect_for_collision_checks, t
+                    ) or pygame.sprite.collide_mask(rect_for_collision_checks, wall):
+                        if pygame.sprite.collide_mask(rect_for_collision_checks, wall) is not None:
+                            mask = pygame.sprite.collide_mask(
+                                rect_for_collision_checks, wall)
+                            if self.v >= 0:
+                                self.rect.y += self.v + \
+                                    abs(mask[1] - self.mask.get_rect()[3])
+                            elif self.v < 0:
+                                self.rect.y += abs(abs(self.v) - mask[1])
+                        if pygame.sprite.collide_mask(rect_for_collision_checks, t) is not None:
+                            mask = pygame.sprite.collide_mask(
+                                rect_for_collision_checks, t)
+                            if self.v > 0:
+                                self.rect.y += self.v + \
+                                    abs(mask[1] - self.mask.get_rect()[3])
+                            elif self.v < 0:
+                                self.rect.y += abs(abs(self.v) - mask[1])
+                        self.v = 0
+                    else:
+                        self.rect.y += self.v
+
+    def died(self):
+        if self.hp <= 0:
+            return self.kill(), True
+        return "", False
+
+    def hp_render(self):
+        if self.hp == 0:
+            return
+        image_hp = pygame.transform.scale(
+            load_image(f"hp_{self.hp}.png"), (400, 50))
+        image_hp.set_colorkey((0, 0, 0))
+        self.game.screen.blit(image_hp, (20, 10))
+
+    def set_image(self, name_of_image, reverse=False):
+        self.image = pygame.transform.scale(
+            load_image(name_of_image), (20, 40))
+        if name_of_image in ["Level_3/mario_run_3.png", "Level_3/mario_run_1.png"]:
+            self.image.set_colorkey((0, 0, 0))
+        else:
+            self.image.set_colorkey((255, 255, 255))
+        if reverse:
+            self.image = pygame.transform.flip(
+                self.image, flip_x=True, flip_y=False)
+        self.mask = pygame.mask.from_surface(self.image)
+
+
+class Ladder(pygame.sprite.Sprite):
+    def __init__(self, game, screen, *k):
+        super().__init__(k)
+        self.screen = screen
+        self.image = load_image("Level_3/l.png")
+        self.image.set_colorkey((255, 255, 255))
+        self.rect = self.image.get_rect()
+        self.rect.x = 0
+        self.rect.y = 0
+        self.mask = pygame.mask.from_surface(self.image)
+
+
+class Platform(pygame.sprite.Sprite):
+    def __init__(self, game, screen, *k):
+        super().__init__(k)
+        self.screen = screen
+        self.image = load_image("Level_3/t.png")
+        self.image.set_colorkey((255, 255, 255))
+        self.rect = self.image.get_rect()
+        self.rect.x = 0
+        self.game = game
+        self.rect.y = 0
+        self.mask = pygame.mask.from_surface(self.image)
+
+
+class Wall(pygame.sprite.Sprite):
+    def __init__(self, game, screen, *k):
+        super().__init__(k)
+        self.screen = screen
+        self.image = load_image("Level_3/gran.png")
+        self.image.set_colorkey((255, 255, 255))
+        self.rect = self.image.get_rect()
+        self.game = game
+        self.rect.x = 0
+        self.rect.y = 0
+        self.mask = pygame.mask.from_surface(self.image)
+
+
+class JumpButton(pygame.sprite.Sprite):
+    def __init__(self, game, screen, *k):
+        super().__init__(k)
+        self.screen = screen
+        self.game = game
+        self.image = load_image("Level_3/jump.png")
+        self.image.set_colorkey((255, 255, 255))
+        self.rect = self.image.get_rect()
+        self.rect.x = 0
+        self.rect.y = 0
+        self.mask = pygame.mask.from_surface(self.image)
+
+
+class Barrier(pygame.sprite.Sprite):
+    def __init__(self, game, screen, *k):
+        super().__init__(k)
+        self.screen = screen
+        self.game = game
+        self.image = load_image("Level_3/bomb.png")
+        self.image.set_colorkey((255, 255, 255))
+        self.rect = self.image.get_rect()
+        self.rect.x = 0
+        self.rect.y = 0
+        self.mask = pygame.mask.from_surface(self.image)
+
+
+class Water(pygame.sprite.Sprite):
+    def __init__(self, game, screen, *k):
+        super().__init__(k)
+        self.screen = screen
+        self.image = load_image("Level_3/water.png")
+        self.image.set_colorkey((255, 255, 255))
+        self.rect = self.image.get_rect()
+        self.rect.x = 0
+        self.rect.y = 0
+        self.mask = pygame.mask.from_surface(self.image)
+
+
+class Portal(pygame.sprite.Sprite):
+    def __init__(self, game, screen, *k):
+        super().__init__(k)
+        self.screen = screen
+        self.image = load_image("Level_3/pr.png")
+        self.image.set_colorkey((255, 255, 255))
+        self.rect = self.image.get_rect()
+        self.rect.x = 0
+        self.rect.y = 0
+        self.mask = pygame.mask.from_surface(self.image)
+
+
 class Game:
     def __init__(self):
-        self.game_surface = pygame.Surface((W * 0.8, H * 0.8), pygame.SRCALPHA, 32)
+        self.game_surface = pygame.Surface(
+            (W * 0.8, H * 0.8), pygame.SRCALPHA, 32)
 
+        self.status = ""
         self.screen = pygame.display.set_mode((W, H))
         self.main_window_of_game = MainWindowOfGame(self.screen, self)
         self.inventory = Inventory(self.screen, self)
@@ -559,8 +819,10 @@ class Game:
         self.introduction()
         self.teaching()
         self.level_1()
+        self.level_3()
 
     def start(self):
+        self.status = "start"
         running = True
 
         fon_image = pygame.transform.scale(
@@ -590,8 +852,10 @@ class Game:
             self.screen.blit(self.game_surface, (0, 0))
             pygame.time.delay(100)
             pygame.display.flip()
+        self.status = ""
 
     def game_over(self):
+        self.status = "game_over"
         self.screen = pygame.display.set_mode((W, H))
         self.main_window_of_game = MainWindowOfGame(self.screen, self)
         self.inventory = Inventory(self.screen, self)
@@ -623,9 +887,11 @@ class Game:
             self.screen.blit(self.game_surface, (0, 0))
             pygame.time.delay(100)
             pygame.display.flip()
+        self.status = ""
         self.start_game()
 
     def introduction(self):
+        self.status = "introduction"
         running = True
 
         zamok = pygame.transform.scale(
@@ -832,10 +1098,13 @@ class Game:
             )
             pygame.time.delay(100)
             pygame.display.flip()
+        self.status = ""
 
         pygame.mixer.music.stop()
 
     def level_1(self):
+        self.status = "level_1"
+
         def near_plates(pos_now_pl):
             k = []
             for i in (-1, 0, 1):
@@ -912,7 +1181,8 @@ class Game:
                         kam_group.add(Player(self, g, i, "Level_1/kam.png"))
                     elif board[i][g] == "gr":
                         plate_group.add(Plate(self, "1", g, i))
-                        players_group.add(Player(self, g, i, "Level_1/grib.png"))
+                        players_group.add(
+                            Player(self, g, i, "Level_1/grib.png"))
                     elif board[i][g] == "kr":
                         plate_group.add(Plate(self, "1", g, i))
                         plate_group.add(Plate(self, "kr", g, i))
@@ -933,7 +1203,7 @@ class Game:
             self.text_window.render()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    running = False
+                    sys.exit()
                 if event.type == pygame.KEYDOWN:
                     delta = [0, 0]
                     pos_now_pl = [0, 0]
@@ -1018,8 +1288,10 @@ class Game:
                                     balls_group.add(
                                         Player(
                                             self,
-                                            mob.pos_on_board()[0] + player.delta_pos[0],
-                                            mob.pos_on_board()[1] + player.delta_pos[1],
+                                            mob.pos_on_board()[
+                                                0] + player.delta_pos[0],
+                                            mob.pos_on_board()[
+                                                1] + player.delta_pos[1],
                                             name="Inventory/ball.png",
                                             delta=player.delta_pos,
                                         )
@@ -1056,13 +1328,15 @@ class Game:
                 for mob in players_group:
                     if mob.pos_on_board() == m.pos_on_board():
                         if mob.hp <= 1:
-                            board[mob.pos_on_board()[1]][mob.pos_on_board()[0]] = "1"
+                            board[mob.pos_on_board()[1]][mob.pos_on_board()[
+                                0]] = "1"
                         mob.hp -= 1
                         m.kill()
                 for mob in kam_group:
                     if mob.pos_on_board() == m.pos_on_board():
                         if mob.hp <= 1:
-                            board[mob.pos_on_board()[1]][mob.pos_on_board()[0]] = "1"
+                            board[mob.pos_on_board()[1]][mob.pos_on_board()[
+                                0]] = "1"
                         mob.hp -= 1
                         m.kill()
                 if board[m.pos_on_board()[1]][m.pos_on_board()[0]] not in [
@@ -1134,7 +1408,110 @@ class Game:
             pygame.time.delay(100)
             pygame.display.flip()
 
+        self.status = ""
         pygame.mixer.music.stop()
+
+    def level_3(self):
+        self.status = "level_3"
+        running = True
+        self.inventory.remove_all()
+        fon_image = pygame.transform.scale(
+            load_image("Level_3/fon.png"), (2750, 5000))
+        platform = Platform(self, self.screen)
+        ladder = Ladder(self, self.screen)
+        wall = Wall(self, self.screen)
+        jump_button = JumpButton(self, self.screen)
+        barrier = Barrier(self, self.screen)
+        water = Water(self, self.screen)
+        portal = Portal(self, self.screen)
+
+        self.screen.fill((127, 72, 41))
+        self.text_window.set_text("")
+        screen_level_3 = pygame.Surface((2750, 5000))
+        player = PlayerForPlatform(self, self.screen, x0=30, y0=4840)
+
+        all_group = pygame.sprite.Group()
+        all_group.add(platform)
+        all_group.add(ladder)
+        all_group.add(water)
+        all_group.add(player)
+        all_group.add(wall)
+        all_group.add(jump_button)
+        all_group.add(barrier)
+        all_group.add(portal)
+
+        delta = [0, 0]
+
+        load_music("Teaching/teaching.mp3")
+        pygame.mixer.music.play(-1, fade_ms=15000)
+
+        while running:
+            self.screen.fill((127, 72, 41))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    delta = [0, 0]
+                    if event.key == pygame.K_LEFT:
+                        delta = [-1, 0]
+                    if event.key == pygame.K_RIGHT:
+                        delta = [1, 0]
+                    if event.key == pygame.K_DOWN and (
+                        pygame.sprite.collide_mask(
+                            player, ladder) or player.in_water
+                    ):
+                        delta = [0, 1]
+                    if event.key == pygame.K_UP and (
+                        pygame.sprite.collide_mask(
+                            player, ladder) or player.in_water
+                    ):
+                        delta = [0, -1]
+                    if event.key == pygame.K_SPACE:
+                        if player.v == 0 and not player.in_water:
+                            player.rect.y -= 2
+                            player.v -= 11
+                    player.update(delta)
+                if event.type == pygame.KEYUP:
+                    delta = [0, 0]
+            player.update(
+                delta,
+                t=platform,
+                l=ladder,
+                wall=wall,
+                j=jump_button,
+                barrier=barrier,
+                water=water,
+            )
+            if pygame.sprite.collide_mask(player, portal):
+                running = False
+                pygame.mixer.music.stop()
+            if player.hp == 0:
+                pygame.mixer.music.stop()
+                self.game_over()
+                break
+
+            self.inventory.render()
+            self.text_window.render()
+            self.left_hand.render()
+            self.right_hand.render()
+
+            screen_level_3.blit(fon_image, (0, 0))
+            all_group.draw(screen_level_3)
+
+            self.screen.blit(
+                screen_level_3,
+                (0, 0),
+                area=(
+                    (player.rect.x - W * 0.3),
+                    (player.rect.y - H * 0.3),
+                    W * 0.8,
+                    H * 0.8,
+                ),
+            )
+            player.hp_render()
+            pygame.display.flip()
+        pygame.mixer.music.stop()
+        self.status = ""
 
 
 game = Game()
