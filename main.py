@@ -597,7 +597,7 @@ class PlayerForPlatform(pygame.sprite.Sprite):
         if wall is not None:
             rect_for_collision_checks = RectForСollisionСhecks(
                 [self.rect.x, self.rect.y + delta[1] * 10], [self.rect[2], self.rect[3] + delta[1] * 10])
-            if (not pygame.sprite.collide_mask(rect_for_collision_checks, wall) and not pygame.sprite.collide_mask(rect_for_collision_checks, t)) or pygame.sprite.collide_mask(self, l):
+            if ((not pygame.sprite.collide_mask(rect_for_collision_checks, t)) or pygame.sprite.collide_mask(self, l)) and not pygame.sprite.collide_mask(rect_for_collision_checks, wall):
                 self.rect.y += delta[1] * 10
             rect_for_collision_checks = RectForСollisionСhecks(
                 [self.rect.x + delta[0] * 10, self.rect.y], [self.rect[2] + delta[0] * 10, self.rect[3]])
@@ -820,6 +820,7 @@ class Game:
         self.teaching()
         self.level_1()
         self.level_3()
+        self.game_over()
 
     def start(self):
         self.status = "start"
@@ -1027,7 +1028,7 @@ class Game:
             self.screen.fill((127, 72, 41))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    running = False
+                    sys.exit()
                 if event.type == pygame.KEYDOWN:
                     delta = [0, 0]
                     pos_now_pl = [0, 0]
